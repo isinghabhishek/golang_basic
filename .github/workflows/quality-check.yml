@@ -1,65 +1,44 @@
-name: quality-check
+name: CI
+
 on:
   push:
-    branches: [ main, master ]
+    branches: [ "master", "main" ]
   pull_request:
-    branches: [ main, master ]
-
-env:
-  # Opt into Node.js 24 for JavaScript (JS) GitHub Actions now to avoid Node.js 20 removal issues.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    branches: [ "master", "main" ]
 
 jobs:
-  quality-check:
+  build:
+    name: Build & Test
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.23'
+          cache: true
 
-      - name: Ensure Go modules exist (create go.mod/go.sum if missing)
-        run: |
-          if [ ! -f go.mod ]; then
-            echo "No go.mod found — initializing module (temporary for CI)."
-            # Use your real module path if you want to persist this in repo.
-            go mod init github.com/isinghabhishek/golang_basic || true
-          fi
-          # Populate go.sum
-          go mod tidy
+      - name: Download dependencies
+        run: go mod download
 
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ${{ env.GOMODCACHE }}
-            ${{ github.workspace }}/pkg/mod
-          # key uses go.sum; since we ran `go mod tidy` above, go.sum should exist
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+      - name: Verify dependencies
+        run: go mod verify
 
-      - name: Check formatting
-        run: |
-          unformatted=$(gofmt -l .)
-          if [ -n "$unformatted" ]; then
-            echo "gofmt needs to be run on these files:"
-            echo "$unformatted"
-            exit 1
-          fi
+      - name: Build
+        run: go build ./...
 
-      - name: Run vet
+      - name: Vet
         run: go vet ./...
 
-      - name: Run linter (optional)
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: v1.59.0
-          args: run ./...
-
       - name: Run tests
-        run: go test ./... -v
+        run: go test ./... -v -race -coverprofile=coverage.out
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.out
+        if: always()
