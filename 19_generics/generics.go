@@ -30,6 +30,9 @@ func main() {
 		elements: []string{"golang"},
 	}
 
+	// use myStack so it's not declared and unused
+	fmt.Println(myStack)
+
 	printStringSlice(names)
 	printSlice(vals)
 	printSlice(nums)
