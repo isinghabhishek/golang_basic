@@ -1,35 +1,26 @@
-name: Rust CI
+  - name: Set up Go
+    uses: actions/setup-go@v4
+    with:
+      go-version: '1.21'
 
-on:
-  push:
-    branches: [main, master, develop]
-  pull_request:
-    branches: [main, master, develop]
+  - name: Check formatting
+    run: |
+      # list files that are not formatted
+      unformatted=$(gofmt -l .)
+      if [ -n "$unformatted" ]; then
+        echo "gofmt needs to be run on these files:"
+        echo "$unformatted"
+        exit 1
+      fi
 
-permissions:
-  contents: read
+  - name: Run vet
+    run: go vet ./...
 
-jobs:
-  quality:
-    runs-on: ubuntu-latest
+  - name: Run linter (optional)
+    uses: golangci/golangci-lint-action@v4
+    with:
+      version: v1.59.0
+      args: run ./...
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-
-      - name: Cache Cargo dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
-
-      - name: Run tests
-        run: cargo test --all-targets --all-features
+  - name: Run tests
+    run: go test ./... -v
