@@ -10,7 +10,8 @@ func getLanguages() (string, string, string) {
 }
 
 func processIt(f func(a int) int) {
-	fn(1)
+	// call the function parameter, not an undefined 'fn'
+	f(1)
 }
 
 func main() {
@@ -18,7 +19,8 @@ func main() {
 		return 2
 	}
 
-	processIt()
+	// pass fn into processIt
+	processIt(fn)
 	// result := add(3, 5)
 	// fmt.Println(result)
 	// lang1, lang2, lang3 := getLanguages()
