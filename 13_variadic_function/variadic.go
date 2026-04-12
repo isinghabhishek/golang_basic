@@ -12,8 +12,10 @@ func sum(nums ...int) int {
 	}
 	return total
 }
+
 func main() {
-	nums := []int(1, 3, 5, 8)
+	// use braces for composite literal
+	nums := []int{1, 3, 5, 8}
 	result := sum(nums...)
 	fmt.Println(result)
 	// fmt.Println(1, 2, 3, 4, 5, "hello")
